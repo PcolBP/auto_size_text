@@ -1,6 +1,8 @@
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:bottom_navy_bar/bottom_navy_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import 'max_lines_demo.dart';
@@ -22,7 +24,7 @@ class App extends StatelessWidget {
       DeviceOrientation.landscapeRight,
     ]);
 
-    SystemChrome.setEnabledSystemUIOverlays([]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
 
     return MaterialApp(
       theme: ThemeData.light(),
