@@ -1,5 +1,12 @@
 part of auto_size_text;
 
+typedef WidgetBuilder = Widget Function(
+  TextStyle calculatedStyle,
+  double calculatedTextScaleFactor,
+);
+
+typedef PainterBuilder = double Function(double maxWidth);
+
 /// Flutter widget that automatically resizes text to fit perfectly within its
 /// bounds.
 ///
@@ -32,6 +39,8 @@ class AutoSizeText extends StatefulWidget {
     this.textScaleFactor,
     this.maxLines,
     this.semanticsLabel,
+    this.painterBuilder,
+    this.widgetBuilder,
   })  : textSpan = null,
         super(key: key);
 
@@ -57,6 +66,8 @@ class AutoSizeText extends StatefulWidget {
     this.textScaleFactor,
     this.maxLines,
     this.semanticsLabel,
+    this.painterBuilder,
+    this.widgetBuilder,
   })  : data = null,
         super(key: key);
 
@@ -214,6 +225,25 @@ class AutoSizeText extends StatefulWidget {
   /// AutoSizeText(r'$$', semanticsLabel: 'Double dollars')
   /// ```
   final String? semanticsLabel;
+
+  /// A custom painter builder to replace inner painter rule
+  ///
+  /// If present then will replace current rule for painter
+  final PainterBuilder? painterBuilder;
+
+  /// A custom WidgetBuilder to return own widget instead of text
+  ///
+  /// If not present default Text will be returned
+  ///
+  /// ```dart
+  /// AutoSizeText(
+  /// text,
+  /// widgetBuilder: (calculatedStyle, calculatedScaleFactor) {
+  ///     return customWidget();
+  ///   },
+  /// );
+  /// ```
+  final WidgetBuilder? widgetBuilder;
 
   @override
   _AutoSizeTextState createState() => _AutoSizeTextState();
@@ -403,7 +433,10 @@ class _AutoSizeTextState extends State<AutoSizeText> {
       strutStyle: widget.strutStyle,
     );
 
-    textPainter.layout(maxWidth: constraints.maxWidth);
+    textPainter.layout(
+      maxWidth: widget.painterBuilder?.call(constraints.maxWidth) ??
+          constraints.maxWidth,
+    );
 
     return !(textPainter.didExceedMaxLines ||
         textPainter.height > constraints.maxHeight ||
@@ -412,36 +445,38 @@ class _AutoSizeTextState extends State<AutoSizeText> {
 
   Widget _buildText(double fontSize, TextStyle style, int? maxLines) {
     if (widget.data != null) {
-      return Text(
-        widget.data!,
-        key: widget.textKey,
-        style: style.copyWith(fontSize: fontSize),
-        strutStyle: widget.strutStyle,
-        textAlign: widget.textAlign,
-        textDirection: widget.textDirection,
-        locale: widget.locale,
-        softWrap: widget.softWrap,
-        overflow: widget.overflow,
-        textScaleFactor: 1,
-        maxLines: maxLines,
-        semanticsLabel: widget.semanticsLabel,
-      );
-    } else {
-      return Text.rich(
-        widget.textSpan!,
-        key: widget.textKey,
-        style: style,
-        strutStyle: widget.strutStyle,
-        textAlign: widget.textAlign,
-        textDirection: widget.textDirection,
-        locale: widget.locale,
-        softWrap: widget.softWrap,
-        overflow: widget.overflow,
-        textScaleFactor: fontSize / style.fontSize!,
-        maxLines: maxLines,
-        semanticsLabel: widget.semanticsLabel,
-      );
+      return widget.widgetBuilder
+              ?.call(style.copyWith(fontSize: fontSize), 1) ??
+          Text(
+            widget.data!,
+            key: widget.textKey,
+            style: style.copyWith(fontSize: fontSize),
+            strutStyle: widget.strutStyle,
+            textAlign: widget.textAlign,
+            textDirection: widget.textDirection,
+            locale: widget.locale,
+            softWrap: widget.softWrap,
+            overflow: widget.overflow,
+            textScaleFactor: 1,
+            maxLines: maxLines,
+            semanticsLabel: widget.semanticsLabel,
+          );
     }
+    return widget.widgetBuilder?.call(style, fontSize / style.fontSize!) ??
+        Text.rich(
+          widget.textSpan!,
+          key: widget.textKey,
+          style: style,
+          strutStyle: widget.strutStyle,
+          textAlign: widget.textAlign,
+          textDirection: widget.textDirection,
+          locale: widget.locale,
+          softWrap: widget.softWrap,
+          overflow: widget.overflow,
+          textScaleFactor: fontSize / style.fontSize!,
+          maxLines: maxLines,
+          semanticsLabel: widget.semanticsLabel,
+        );
   }
 
   void _notifySync() {
